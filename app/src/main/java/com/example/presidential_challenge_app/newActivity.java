@@ -1,55 +1,162 @@
 package com.example.presidential_challenge_app;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
+import org.json.JSONArray;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 public class newActivity extends AppCompatActivity {
+    private List<ArrayList<Double>> mapRow;
+    private ArrayList<Double> listInstance;
+    private ArrayList<String> dataPoints;
+    private JSONArray tryTHis = new JSONArray();
+    private final String mapLink = "http://128.153.161.14/map_data.php";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.layout);
 
-        // TODO Create server listener
+        // Instantiate the RequestQueue.
+        RequestQueue queue = Volley.newRequestQueue(this);
 
-        // TODO implement with actual server generated map
-        // Get List object from server object
-        List<ArrayList<Double>> mapRow = new ArrayList<ArrayList<Double>>();
-        Random rand = new Random();
-        // Create random data in range 0 to 1
-        for(int i = 0; i < 25; i++) { // TODO make index based on actual data
-            ArrayList<Double> listInstance = new ArrayList<Double>();
-            for (int j = 0; j < 25; j++) {  // Create random numbers to store in nested list
-                Double nextDouble = new Double(rand.nextDouble());
-                listInstance.add(nextDouble);
-            }
+        JSONArray response = getJSONArrayResponse(queue);
+
+        mapRow = new ArrayList<ArrayList<Double>>();
+
+        JsonArrayRequest testJson = new JsonArrayRequest(Request.Method.GET, mapLink, null, new Response.Listener<JSONArray>() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+            @Override
+            public void onResponse(JSONArray response) {
+
+                // Parse through JSONArray
+                for (int i = 0; i < response.length(); i++){
+
+                }
+
+                for(int i = 0; i < response.length(); i++) {
+                    listInstance = new ArrayList<Double>();
+                    try {
+
+                        // Convert JSON Array to ArrayList<String>
+                        String responseString = response.get(i).toString();
+                        dataPoints = new ArrayList<String>();
+                        String dataValue = new String();
+                        for (int index = 0; index < responseString.length(); index++) {
+                            if (responseString.charAt(index) == ','){
+                                dataPoints.add(dataValue);
+                                dataValue = new String();
+                            }
+                            else if (responseString.charAt(index) == '"'
+                                    || responseString.charAt(index) == '['
+                                    || responseString.charAt(index) == ']') {
+                                // Do nothing
+                            }
+                            else {
+                                dataValue = dataValue + responseString.charAt(index);
+                            }
+                        }
+
+//                        Log.d("Data PO: ", dataPoints.toString());
+
+                        // Convert ArrayList<String> to ArrayList<Double>
+                        for (String item : dataPoints) {
+                            Double d = Double.valueOf(item);
+                            listInstance.add(d);
+                        }
+//                        Log.d("listInstance: ", listInstance.toString());
+
+                    }
+                    catch (Exception exc){
+                        Log.d("Exception: ", exc.toString());
+                    }
+
+                    // Add data to map
+                    mapRow.add(listInstance);
+                }
+//
             mapRow.add(listInstance);
         }
 
-//         Display testing map
-//        for (ArrayList<Double> item : mapRow) {
-//            for (Double number : item) {
-//                Log.d("List number: ", String.valueOf(number));
-////                System.out.printf("%f ", number);
-//            }
-//        }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("ERROR", "JSON request error occurred");
+                Log.e("VOLLEY ERROR: ", error.toString());
+
+            }
+        });
+
+        // Add the request to the RequestQueue.
+        queue.add(testJson);
+
+
+        for(int i = 0; i < response.length(); i++) {
+                    listInstance = new ArrayList<Double>();
+                    try {
+
+                        // Convert JSON Array to ArrayList<String>
+                        String responseString = response.get(i).toString();
+                        dataPoints = new ArrayList<String>();
+                        String dataValue = new String();
+                        for (int index = 0; index < responseString.length(); index++) {
+                            if (responseString.charAt(index) == ','){
+                                dataPoints.add(dataValue);
+                                dataValue = new String();
+                            }
+                            else if (responseString.charAt(index) == '"'
+                                    || responseString.charAt(index) == '['
+                                    || responseString.charAt(index) == ']') {
+                                // Do nothing
+                            }
+                            else {
+                                dataValue = dataValue + responseString.charAt(index);
+                            }
+                        }
+
+//                        Log.d("Data PO: ", dataPoints.toString());
+
+                        // Convert ArrayList<String> to ArrayList<Double>
+                        for (String item : dataPoints) {
+                            Double d = Double.valueOf(item);
+                            listInstance.add(d);
+                        }
+//                        Log.d("listInstance: ", listInstance.toString());
+
+                    }
+                    catch (Exception exc){
+                        Log.d("Exception: ", exc.toString());
+                    }
+
+                    // Add data to map
+                    mapRow.add(listInstance);
+        }
+
+        Log.d("Map Data: ", mapRow.toString());
 
         // Create Grid Layout
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        int width = metrics.widthPixels;
-        int height = metrics.heightPixels;
-
         LinearLayout mainLay = (LinearLayout) findViewById(R.id.mainLayout);
-
 
         for (ArrayList<Double> item : mapRow) {
             LinearLayout squares = new LinearLayout(this);
@@ -71,6 +178,37 @@ public class newActivity extends AppCompatActivity {
             mainLay.addView(squares);
         }
 
+    }
+
+    public JSONArray getJSONArrayResponse(RequestQueue queue) {
+        final JSONArray[] returnedResponse = {new JSONArray()};
+        JsonArrayRequest testJson = new JsonArrayRequest(Request.Method.GET, mapLink, null, new Response.Listener<JSONArray>() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+            @Override
+            public void onResponse(JSONArray response) {
+//                Log.d("Response Returned",response.toString());
+                tryTHis = response;
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("ERROR", "JSON request error occurred");
+                Log.e("VOLLEY ERROR: ", error.toString());
+
+            }
+        });
+
+        // Add the request to the RequestQueue.
+        queue.add(testJson);
+
+        return tryTHis;
+    }
+
+    private void sharedResponse(String key, float response) {
+        SharedPreferences m = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = m.edit();
+        editor.putFloat(key, response);
+        editor.commit();
     }
 
     /**
