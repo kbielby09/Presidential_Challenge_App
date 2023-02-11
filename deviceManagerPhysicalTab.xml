@@ -5,6 +5,16 @@
         <key>
           <Key>
             <type value="SERIAL_NUMBER" />
+            <value value="R5CT80V20LR" />
+          </Key>
+        </key>
+        <name value="Device" />
+        <target value="Android 1.0" />
+      </PhysicalDevice>
+      <PhysicalDevice>
+        <key>
+          <Key>
+            <type value="SERIAL_NUMBER" />
             <value value="26211FDF60017U" />
           </Key>
         </key>
